@@ -7,7 +7,7 @@ from PIL import Image
 import io
 import base64
 import os
-import requests
+import gdown
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS
@@ -15,7 +15,7 @@ CORS(app)  # Enable CORS
 def download_model_if_not_exists():
     model_path = 'model/cataract_model.keras'
     model_dir = 'model'
-    file_id = '1Wmvu-Y0nvs-kq7Q0M69zQZqg0Rzzh2Vg'  # <-- PUT YOUR GOOGLE DRIVE FILE ID HERE
+    file_id = '1Wmvu-Y0nvs-kq7Q0M69zQZqg0Rzzh2Vg'
     url = f'https://drive.google.com/uc?id={file_id}'
 
     if not os.path.exists(model_dir):
@@ -23,16 +23,17 @@ def download_model_if_not_exists():
 
     if not os.path.exists(model_path):
         print("Downloading model from Google Drive...")
-        response = requests.get(url)
-        with open(model_path, 'wb') as f:
-            f.write(response.content)
+        gdown.download(url, model_path, quiet=False)
         print("Model downloaded successfully!")
 
-# Call it once at startup
-download_model_if_not_exists()
+try:
+    download_model_if_not_exists()
+except Exception as exc:
+    print(f"Model download failed: {exc}")
 
 # Now load the pre-trained model
 model = load_model('model/cataract_model.keras')  # Update with your model path
+print("Model loaded successfully!")
 
 def process_image(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
