@@ -7,11 +7,31 @@ from PIL import Image
 import io
 import base64
 import os
+import requests
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS
 
-# Load the pre-trained model (replace with your actual model path)
+def download_model_if_not_exists():
+    model_path = 'model/cataract_model.keras'
+    model_dir = 'model'
+    file_id = '1Wmvu-Y0nvs-kq7Q0M69zQZqg0Rzzh2Vg'  # <-- PUT YOUR GOOGLE DRIVE FILE ID HERE
+    url = f'https://drive.google.com/uc?id={file_id}'
+
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+
+    if not os.path.exists(model_path):
+        print("Downloading model from Google Drive...")
+        response = requests.get(url)
+        with open(model_path, 'wb') as f:
+            f.write(response.content)
+        print("Model downloaded successfully!")
+
+# Call it once at startup
+download_model_if_not_exists()
+
+# Now load the pre-trained model
 model = load_model('model/cataract_model.keras')  # Update with your model path
 
 def process_image(image_bytes):
@@ -49,9 +69,9 @@ def predict():
     # Resize the image to model expected size
     image = image.resize((224, 224))
 
-    # Convert to numpy array and normalize (optional, based on how your model was trained)
-    img_array = np.array(image) / 255.0  # Normalize if needed
-    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+    # Convert to numpy array and normalize
+    img_array = np.array(image) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
 
     # Predict the result using the model
     prediction = model.predict(img_array)
